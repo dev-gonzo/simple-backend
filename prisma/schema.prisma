@@ -1,0 +1,176 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model users {
+  id            Int         @id @default(autoincrement())
+  name          String
+  email         String      @unique
+  password      String
+  active        Boolean
+  createAt      DateTime    @default(now())
+  updateAt      DateTime    @updatedAt
+  deleted       Boolean     @default(false)
+  accessGroupId Int
+  accessGroup   accessGroup @relation(fields: [accessGroupId], references: [id])
+  empresaId     Int
+  empresa       empresa     @relation(fields: [empresaId], references: [id])
+  leads         leads[]
+}
+
+model tokenBlackList {
+  id       Int      @id @default(autoincrement())
+  token    String   @unique
+  createAt DateTime @default(now())
+}
+
+model accessGroup {
+  id                     Int                      @id @default(autoincrement())
+  name                   String
+  empresaId              Int?
+  empresa                empresa?                 @relation(fields: [empresaId], references: [id])
+  active                 Boolean
+  createAt               DateTime                 @default(now())
+  updateAt               DateTime                 @updatedAt
+  accessGroupPermissions accessGroupPermissions[]
+  users                  users[]
+}
+
+model permissions {
+  id                     Int                      @id @default(autoincrement())
+  key                    String                   @unique
+  active                 Boolean
+  accessGroupPermissions accessGroupPermissions[]
+}
+
+model accessGroupPermissions {
+  id            Int         @id @default(autoincrement())
+  accessGroupId Int
+  accessGroup   accessGroup @relation(fields: [accessGroupId], references: [id])
+  permissionsId Int
+  permissions   permissions @relation(fields: [permissionsId], references: [id])
+  createAt      DateTime    @default(now())
+  updateAt      DateTime    @updatedAt
+}
+
+model empresa {
+  id              Int              @id @default(autoincrement())
+  cnpj            String           @unique
+  inscEstadual    String?
+  razaoSocial     String
+  nomeFantasia    String
+  ramoAtividade   String
+  qtdFuncionarios String
+  responsavel     String
+  telefone        String
+  email           String
+  active          Boolean
+  createAt        DateTime         @default(now())
+  updateAt        DateTime         @updatedAt
+  origin          origin[]
+  serviceChannel  serviceChannel[]
+  accessGroup     accessGroup[]
+  users           users[]
+  leads           leads[]
+}
+
+model origin {
+  id          Int        @id @default(autoincrement())
+  name        String
+  description String?
+  fixedCost   Boolean    @default(false)
+  active      Boolean
+  empresa     empresa    @relation(fields: [empresaId], references: [id])
+  empresaId   Int
+  createAt    DateTime   @default(now())
+  updateAt    DateTime   @updatedAt
+  leadCost    leadCost[]
+}
+
+model leadCost {
+  id       Int      @id @default(autoincrement())
+  origin   origin   @relation(fields: [originId], references: [id])
+  originId Int
+  value    Decimal
+  active   Boolean
+  createAt DateTime @default(now())
+  updateAt DateTime @updatedAt
+}
+
+model serviceChannel {
+  id        Int      @id @default(autoincrement())
+  name      String
+  active    Boolean
+  empresa   empresa  @relation(fields: [empresaId], references: [id])
+  empresaId Int
+  createAt  DateTime @default(now())
+  updateAt  DateTime @updatedAt
+  leads     leads[]
+}
+
+model domains {
+  id          Int      @id @default(autoincrement())
+  description String
+  active      Boolean
+  createAt    DateTime @default(now())
+  updateAt    DateTime @updatedAt
+  leads       leads[]
+}
+
+model leads {
+  id             Int            @id @default(autoincrement())
+  date           DateTime
+  contact        String
+  statusId       Int
+  domains        domains        @relation(fields: [statusId], references: [id])
+  empresaId      Int
+  empresa        empresa        @relation(fields: [empresaId], references: [id])
+  channelId      Int
+  serviceChannel serviceChannel @relation(fields: [channelId], references: [id])
+  userId         Int?
+  users          users?         @relation(fields: [userId], references: [id])
+  toView         Boolean        @default(false)
+  active         Boolean
+  createAt       DateTime       @default(now())
+  updateAt       DateTime       @updatedAt
+  historyLeads   historyLeads[]
+  leadsPhone     leadsPhone[]
+  leadsEmail     leadsEmail[]
+}
+
+model leadsPhone {
+  id       Int      @id @default(autoincrement())
+  ddd      Int
+  phone    String
+  isMain   Boolean  @default(false)
+  leadId   Int
+  leads    leads    @relation(fields: [leadId], references: [id])
+  createAt DateTime @default(now())
+  updateAt DateTime @updatedAt
+}
+
+model leadsEmail {
+  id       Int      @id @default(autoincrement())
+  email    String
+  isMain   Boolean  @default(false)
+  leadId   Int
+  leads    leads    @relation(fields: [leadId], references: [id])
+  createAt DateTime @default(now())
+  updateAt DateTime @updatedAt
+}
+
+model historyLeads {
+  id          Int      @id @default(autoincrement())
+  description Json
+  leadId      Int
+  leads       leads    @relation(fields: [leadId], references: [id])
+  createAt    DateTime @default(now())
+}
